@@ -1,0 +1,42 @@
+name: iOS Build
+
+on:
+  workflow_dispatch: # Allow manual triggering
+  push:
+    paths:
+      - 'src/**'
+      - '.github/workflows/ios.yml'
+      - 'examples/**' # If examples are ever built for iOS
+  pull_request:
+    paths:
+      - 'src/**'
+      - '.github/workflows/ios.yml'
+      - 'examples/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build_ios:
+    name: Build for iOS
+    runs-on: macos-latest # iOS builds require macOS
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Select latest Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: 'latest' # Or specify a particular version like '14.3.1'
+
+    - name: Build raylib for iOS
+      working-directory: src # The Makefile.ios is in the src directory
+      run: make -f Makefile.ios
+
+    - name: Archive iOS static library
+      if: success()
+      uses: actions/upload-artifact@v3
+      with:
+        name: libraylib_ios-arm64
+        path: src/libraylib_ios.a

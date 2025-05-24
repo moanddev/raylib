@@ -20,6 +20,8 @@
 #         - Linux DRM subsystem (KMS mode)
 #     > PLATFORM_ANDROID:
 #         - Android (ARM, ARM64)
+#     > PLATFORM_IOS:
+#         - iOS (ARM64)
 #
 #   Many thanks to Milan Nikolic (@gen2brain) for implementing Android platform pipeline.
 #   Many thanks to Emanuele Petriglia for his contribution on GNU/Linux pipeline.
@@ -50,7 +52,7 @@
 
 # Define required environment variables
 #------------------------------------------------------------------------------------------------
-# Define target platform: PLATFORM_DESKTOP, PLATFORM_DRM, PLATFORM_ANDROID, PLATFORM_WEB
+# Define target platform: PLATFORM_DESKTOP, PLATFORM_DRM, PLATFORM_ANDROID, PLATFORM_WEB, PLATFORM_IOS
 PLATFORM             ?= PLATFORM_DESKTOP
 
 # Define required raylib variables
@@ -114,7 +116,7 @@ HOST_PLATFORM_OS ?= WINDOWS
 PLATFORM_OS ?= WINDOWS
 
 # Determine PLATFORM_OS when required
-ifeq ($(PLATFORM),$(filter $(PLATFORM),PLATFORM_DESKTOP PLATFORM_DESKTOP_SDL PLATFORM_WEB PLATFORM_ANDROID))
+ifeq ($(PLATFORM),$(filter $(PLATFORM),PLATFORM_DESKTOP PLATFORM_DESKTOP_SDL PLATFORM_WEB PLATFORM_ANDROID PLATFORM_IOS))
     # No uname.exe on MinGW!, but OS=Windows_NT on Windows!
     # ifeq ($(UNAME),Msys) -> Windows
     ifeq ($(OS),Windows_NT)
@@ -146,6 +148,14 @@ ifeq ($(PLATFORM),$(filter $(PLATFORM),PLATFORM_DESKTOP PLATFORM_DESKTOP_SDL PLA
             PLATFORM_SHELL = sh
         endif
     endif
+endif
+ifeq ($(PLATFORM),PLATFORM_IOS)
+    PLATFORM_OS = IOS
+    # OSX default compiler
+    CC = clang
+    AR = ar
+    # On iOS OpenGL ES 2.0 is used by default
+    GRAPHICS ?= GRAPHICS_API_OPENGL_ES2
 endif
 ifeq ($(PLATFORM),PLATFORM_DRM)
     UNAMEOS = $(shell uname)
@@ -244,14 +254,21 @@ endif
 
 # Define default C compiler and archiver to pack library: CC, AR
 #------------------------------------------------------------------------------------------------
-CC = gcc
-AR = ar
+# Default compiler and archiver are set further down, depending on PLATFORM_OS inside PLATFORM specific blocks
+# CC = gcc
+# AR = ar
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),OSX)
         # OSX default compiler
         CC = clang
         GLFW_OSX = -x objective-c
+    else ifeq ($(PLATFORM_OS),WINDOWS)
+        CC = gcc
+        AR = ar
+    else
+        CC = gcc
+        AR = ar
     endif
     ifeq ($(PLATFORM_OS),BSD)
         # FreeBSD, OpenBSD, NetBSD, DragonFly default compiler
@@ -343,6 +360,14 @@ endif
 #  -Werror=implicit-function-declaration   catch function calls without prior declaration
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     CFLAGS += -Werror=implicit-function-declaration
+endif
+ifeq ($(PLATFORM),PLATFORM_IOS)
+    CFLAGS += -arch arm64
+    CFLAGS += -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path)
+    CFLAGS += -miphoneos-version-min=11.0
+    CFLAGS += -DPLATFORM_IOS
+    CFLAGS += -std=c99
+    # NOTE: FRAMEWORK_PATH for system frameworks should not be needed with xcrun
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     # -Os                        # size optimization
@@ -477,12 +502,22 @@ ifeq ($(PLATFORM),PLATFORM_ANDROID)
         INCLUDE_PATHS += -I$(ANDROID_SYSROOT)/usr/include/x86_64-linux-android
     endif
 endif
+ifeq ($(PLATFORM),PLATFORM_IOS)
+    INCLUDE_PATHS += -I$(shell xcrun --sdk iphoneos --show-sdk-path)/usr/include
+endif
 
 # Define library paths containing required libs: LDFLAGS
 # NOTE: This is only required for dynamic library generation
 #------------------------------------------------------------------------------------------------
 LDFLAGS = $(CUSTOM_LDFLAGS) -L. -L$(RAYLIB_RELEASE_PATH)
 
+ifeq ($(PLATFORM),PLATFORM_IOS)
+    LDFLAGS += -arch arm64 -isysroot $(shell xcrun --sdk iphoneos --show-sdk-path) -miphoneos-version-min=11.0
+    # For static linking, LDFLAGS might be minimal if not creating a dylib directly from Makefile
+    # If creating a dylib (RAYLIB_LIBTYPE=SHARED):
+    # LDFLAGS += -dynamiclib -install_name @rpath/lib$(RAYLIB_LIB_NAME).$(RAYLIB_API_VERSION).dylib
+    # LDFLAGS += -compatibility_version $(RAYLIB_API_VERSION) -current_version $(RAYLIB_VERSION)
+endif
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),WINDOWS)
         ifneq ($(CC), tcc)
@@ -550,6 +585,12 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
         # a static library known as libglfw3.a. In that case, the name should be -lglfw3
         LDLIBS = -lglfw
     endif
+endif
+ifeq ($(PLATFORM),PLATFORM_IOS)
+    # For a static library, LDLIBS are not directly used in the ar command,
+    # but they are essential if linking an executable or shared library.
+    # For now, we define them, assuming they might be used by a project linking against libraylib.a or if we build a dylib.
+    LDLIBS = -framework Foundation -framework UIKit -framework OpenGLES -framework GLKit -framework CoreGraphics -framework QuartzCore
 endif
 ifeq ($(PLATFORM),PLATFORM_DESKTOP_SDL)
     ifeq ($(PLATFORM_OS),WINDOWS)
