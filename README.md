@@ -36,7 +36,7 @@ Ready to learn? Jump to [code examples!](https://www.raylib.com/examples.html)
 features
 --------
   - **NO external dependencies**, all required libraries are [bundled into raylib](https://github.com/raysan5/raylib/tree/master/src/external)
-  - Multiple platforms supported: **Windows, Linux, MacOS, RPI, Android, HTML5... and more!**
+  - Multiple platforms supported: **Windows, Linux, MacOS, iOS, RPI, Android, HTML5... and more!**
   - Written in plain C code (C99) using PascalCase/camelCase notation
   - Hardware accelerated with OpenGL (**1.1, 2.1, 3.3, 4.3, ES 2.0, ES 3.0**)
   - **Unique OpenGL abstraction layer** (usable as standalone module): [rlgl](https://github.com/raysan5/raylib/blob/master/src/rlgl.h)
@@ -96,6 +96,7 @@ raylib is also available via multiple [package managers](https://github.com/rays
  - [Working on Raspberry Pi](https://github.com/raysan5/raylib/wiki/Working-on-Raspberry-Pi)
  - [Working for Android](https://github.com/raysan5/raylib/wiki/Working-for-Android)
  - [Working for Web (HTML5)](https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5))
+ - **Working for iOS**: Navigate to the `src` directory and build using `make -f Makefile.ios` (requires Xcode and macOS).
  - [Working anywhere with CMake](https://github.com/raysan5/raylib/wiki/Working-with-CMake)
 
 *Note that the Wiki is open for edit, if you find some issues while building raylib for your target platform, feel free to edit the Wiki or open an issue related to it.*

@@ -1,0 +1,84 @@
+# Makefile for raylib - iOS arm64 static library
+
+# Define raylib source code path (assuming this Makefile is in src/)
+RAYLIB_SRC_PATH      ?= .
+
+# Output directory for compiled library
+RAYLIB_RELEASE_PATH  ?= .
+
+# Library name
+RAYLIB_LIB_NAME      ?= raylib_ios
+
+# Compiler and Archiver
+CC = clang
+AR = ar
+
+# SDK Path - Use xcrun to find the iOS SDK
+SDK_PATH := $(shell xcrun --sdk iphoneos --show-sdk-path)
+
+# iOS Target
+TARGET_ARCH = arm64
+MIN_IOS_VERSION = 11.0
+
+# Graphics API
+GRAPHICS = GRAPHICS_API_OPENGL_ES2
+
+# Compiler Flags
+CFLAGS = -Wall \
+         -D_DEFAULT_SOURCE \
+         -DPLATFORM_IOS \
+         -D$(GRAPHICS) \
+         -arch $(TARGET_ARCH) \
+         -isysroot $(SDK_PATH) \
+         -miphoneos-version-min=$(MIN_IOS_VERSION) \
+         -fPIC \
+         -fobjc-arc \
+         -fmodules \
+         -Wno-missing-braces \
+         -Werror=pointer-arith \
+         -fno-strict-aliasing \
+         -std=c99 \
+         -Os # Optimize for size
+
+# Include Paths
+INCLUDE_PATHS = -I$(RAYLIB_SRC_PATH) \
+                -I$(RAYLIB_SRC_PATH)/external/glfw/include # GLFW headers might still be referenced by core sources
+
+# Source Files
+# Note: rcore.c should ideally handle inclusion of platforms/rcore_ios.c via #ifdef PLATFORM_IOS
+RAYLIB_CORE_SOURCES = $(RAYLIB_SRC_PATH)/rcore.c \
+                      $(RAYLIB_SRC_PATH)/rshapes.c \
+                      $(RAYLIB_SRC_PATH)/rtextures.c \
+                      $(RAYLIB_SRC_PATH)/rtext.c \
+                      $(RAYLIB_SRC_PATH)/rmodels.c \
+                      $(RAYLIB_SRC_PATH)/utils.c
+
+# If rcore.c does not include platforms/rcore_ios.c, then it needs to be compiled separately.
+# Assuming for now rcore.c handles it. If PLATFORM_IOS is defined, rcore.c should include it.
+# If you find that rcore.c itself is the platform-specific part for desktop,
+# then you might need to compile platforms/rcore_ios.c directly instead of rcore.c,
+# or ensure rcore.c is structured to be a common base + platform specific includes.
+# For raylib, rcore.c contains common code and includes the platform specific file.
+
+RAYLIB_AUDIO_SOURCES = $(RAYLIB_SRC_PATH)/raudio.c
+
+OBJS = $(RAYLIB_CORE_SOURCES:.c=.o) $(RAYLIB_AUDIO_SOURCES:.c=.o)
+
+# Default target
+all: $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).a
+
+# Rule to build the static library
+$(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).a: $(OBJS)
+	$(AR) rcs $@ $(OBJS)
+	@echo "iOS static library generated: $@"
+
+# Rule to compile .c files to .o
+%.o: %.c
+	$(CC) -c $< $(CFLAGS) $(INCLUDE_PATHS) -o $@
+
+# Clean rule
+clean:
+	rm -f $(OBJS) $(RAYLIB_RELEASE_PATH)/lib$(RAYLIB_LIB_NAME).a
+	@echo "Cleaned iOS build files."
+
+.PHONY: all clean

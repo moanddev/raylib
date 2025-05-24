@@ -37,10 +37,14 @@ set(raylib_sources
     utils.c
     )
 
-# <root>/cmake/GlfwImport.cmake handles the details around the inclusion of glfw
-if (NOT ${PLATFORM} MATCHES "Web")
-    include(GlfwImport)
-endif ()
+if (${PLATFORM} MATCHES "IOS")
+    list(APPEND raylib_sources platforms/rcore_ios.c)
+else()
+    # <root>/cmake/GlfwImport.cmake handles the details around the inclusion of glfw
+    if (NOT ${PLATFORM} MATCHES "Web")
+        include(GlfwImport)
+    endif ()
+endif()
 
 # Sets additional platform options and link libraries for each platform
 # also selects the proper graphics API and version for that platform
@@ -93,6 +97,10 @@ target_link_libraries(raylib "${LIBS_PRIVATE}")
 # If CUSTOMIZE_BUILD option is on you will not use config.h by default
 # and you will be able to select more build options
 include(CompileDefinitions)
+
+if (${PLATFORM} MATCHES "IOS")
+    target_compile_definitions(raylib PUBLIC PLATFORM_IOS)
+endif()
 
 # Registering include directories
 target_include_directories(raylib
