@@ -36,7 +36,7 @@ jobs:
 
     - name: Archive iOS static library
       if: success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: libraylib_ios-arm64
         path: src/libraylib_ios.a

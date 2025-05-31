@@ -110,21 +110,21 @@ static void UpdateMouseWithFirstTouch(void) {
     int activeTouchCount = 0;
 
     for (int i = 0; i < MAX_TOUCH_POINTS; i++) {
-        if (CORE.Input.Touch.pointId[i] != 0 && CORE.Input.Touch.currentTouchState[i] == 1) { 
+        if (CORE.Input.Touch.pointId[i] != 0 && CORE.Input.Touch.currentTouchState[i] == 1) {
             if (!firstTouchFound) {
                 CORE.Input.Mouse.currentPosition.x = CORE.Input.Touch.position[i].x;
                 CORE.Input.Mouse.currentPosition.y = CORE.Input.Touch.position[i].y;
-                CORE.Input.Mouse.currentButtonState[MOUSE_BUTTON_LEFT] = 1; 
+                CORE.Input.Mouse.currentButtonState[MOUSE_BUTTON_LEFT] = 1;
                 firstTouchFound = true;
             }
             activeTouchCount++;
         }
     }
-    
-    CORE.Input.Touch.pointCount = activeTouchCount; 
 
-    if (!firstTouchFound) { 
-        CORE.Input.Mouse.currentButtonState[MOUSE_BUTTON_LEFT] = 0; 
+    CORE.Input.Touch.pointCount = activeTouchCount;
+
+    if (!firstTouchFound) {
+        CORE.Input.Mouse.currentButtonState[MOUSE_BUTTON_LEFT] = 0;
     }
 }
 
@@ -155,7 +155,7 @@ static void UpdateMouseWithFirstTouch(void) {
             CGPoint location = [touch locationInView:self];
             CORE.Input.Touch.position[slot].x = location.x * [[UIScreen mainScreen] scale]; // Adjust for DPI
             CORE.Input.Touch.position[slot].y = location.y * [[UIScreen mainScreen] scale]; // Adjust for DPI
-            CORE.Input.Touch.currentTouchState[slot] = 1; 
+            CORE.Input.Touch.currentTouchState[slot] = 1;
             TRACELOG(LOG_DEBUG, "IOS: Touch began (slot %d, id %p) at: %.2f, %.2f", slot, touch, location.x, location.y);
         }
     }
@@ -164,7 +164,7 @@ static void UpdateMouseWithFirstTouch(void) {
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     for (UITouch *touch in touches) {
-        int slot = GetTouchPointSlot(touch); 
+        int slot = GetTouchPointSlot(touch);
         if (slot != -1) {
             CGPoint location = [touch locationInView:self];
             CORE.Input.Touch.position[slot].x = location.x * [[UIScreen mainScreen] scale]; // Adjust for DPI
@@ -172,15 +172,15 @@ static void UpdateMouseWithFirstTouch(void) {
             TRACELOG(LOG_DEBUG, "IOS: Touch moved (slot %d, id %p) at: %.2f, %.2f", slot, touch, location.x, location.y);
         }
     }
-    UpdateMouseWithFirstTouch(); 
+    UpdateMouseWithFirstTouch();
 }
 
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     for (UITouch *touch in touches) {
-        int slot = GetTouchPointSlot(touch); 
+        int slot = GetTouchPointSlot(touch);
         if (slot != -1) {
-            CORE.Input.Touch.currentTouchState[slot] = 0; 
-            CORE.Input.Touch.pointId[slot] = 0; 
+            CORE.Input.Touch.currentTouchState[slot] = 0;
+            CORE.Input.Touch.pointId[slot] = 0;
             TRACELOG(LOG_DEBUG, "IOS: Touch ended (slot %d, id %p)", slot, touch);
         }
     }
@@ -189,7 +189,7 @@ static void UpdateMouseWithFirstTouch(void) {
 
 - (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     TRACELOG(LOG_DEBUG, "IOS: Touch cancelled");
-    [self touchesEnded:touches withEvent:event]; 
+    [self touchesEnded:touches withEvent:event];
 }
 
 - (void)iosRunLoop:(CADisplayLink *)sender {
@@ -201,7 +201,7 @@ static void UpdateMouseWithFirstTouch(void) {
 void RaylibiOS_GameLoopStep(void) {
     if (!appActive || CORE.Window.shouldClose) return;
 
-    PollInputEvents(); 
+    PollInputEvents();
 
     CORE.Time.current = GetTime();
     CORE.Time.update = CORE.Time.current - CORE.Time.previous;
@@ -209,10 +209,10 @@ void RaylibiOS_GameLoopStep(void) {
 
     if (CORE.Loop.callback != NULL)
     {
-        CORE.Loop.callback(); 
+        CORE.Loop.callback();
     }
 
-    CORE.Time.draw = GetTime() - CORE.Time.previous; 
+    CORE.Time.draw = GetTime() - CORE.Time.previous;
     CORE.Time.frame = CORE.Time.update + CORE.Time.draw;
     CORE.Time.frameCounter++;
 }
@@ -223,19 +223,19 @@ void InitPlatform(void)
     iosWindow = [[UIWindow alloc] initWithFrame:screenBounds];
     if (!iosWindow) { TRACELOG(LOG_FATAL, "PLATFORM: IOS: Failed to create UIWindow"); return; }
 
-    iosView = [[RaylibView alloc] initWithFrame:screenBounds]; 
+    iosView = [[RaylibView alloc] initWithFrame:screenBounds];
     if (!iosView) { TRACELOG(LOG_FATAL, "PLATFORM: IOS: Failed to create RaylibView"); [iosWindow release]; iosWindow = NULL; return; }
-    
+
     iosViewController = [[UIViewController alloc] init];
     if (!iosViewController) { TRACELOG(LOG_FATAL, "PLATFORM: IOS: Failed to create UIViewController"); [iosView release]; iosView = NULL; [iosWindow release]; iosWindow = NULL; return; }
-    
-    [iosViewController setView:iosView]; 
+
+    [iosViewController setView:iosView];
     [iosWindow setRootViewController:iosViewController];
     [iosWindow makeKeyAndVisible];
 
     CORE.Window.display.width = (int)screenBounds.size.width;
     CORE.Window.display.height = (int)screenBounds.size.height;
-    
+
     if (CORE.Window.screen.width == 0 || CORE.Window.screen.height == 0)
     {
         CORE.Window.screen.width = CORE.Window.display.width;
@@ -245,13 +245,13 @@ void InitPlatform(void)
     for (int i = 0; i < MAX_TOUCH_POINTS; i++) CORE.Input.Touch.pointId[i] = 0;
     CORE.Input.Touch.pointCount = 0;
 
-    appActive = true; 
+    appActive = true;
 
     displayLink = [CADisplayLink displayLinkWithTarget:iosView selector:@selector(iosRunLoop:)];
     if (!displayLink) { TRACELOG(LOG_FATAL, "PLATFORM: IOS: Failed to create CADisplayLink"); return; }
-    
+
     int fps = (CORE.Time.target > 0.0) ? (int)(1.0/CORE.Time.target) : 60;
-    if ([displayLink respondsToSelector:@selector(setPreferredFramesPerSecond:)]) { 
+    if ([displayLink respondsToSelector:@selector(setPreferredFramesPerSecond:)]) {
         [displayLink setPreferredFramesPerSecond:fps];
     }
 
@@ -264,7 +264,7 @@ void ClosePlatform(void)
 {
     if (displayLink) { [displayLink invalidate]; displayLink = NULL; }
     if (iosViewController != NULL) [iosViewController release];
-    if (iosView != NULL) [iosView release]; 
+    if (iosView != NULL) [iosView release];
     if (iosWindow != NULL) [iosWindow release];
     iosViewController = NULL; iosView = NULL; iosWindow = NULL;
     TRACELOG(LOG_INFO, "PLATFORM: IOS: Closed main window, view, view controller, and display link");
@@ -316,11 +316,11 @@ void InitGraphicsDevice(void)
     CORE.Window.render.width = currentScreenWidth; CORE.Window.render.height = currentScreenHeight;
     CORE.Window.currentFbo.width = currentScreenWidth; CORE.Window.currentFbo.height = currentScreenHeight;
 
-    if (CORE.Window.flags & FLAG_DEPTH_TEST) 
+    if (CORE.Window.flags & FLAG_DEPTH_TEST)
     {
         glGenRenderbuffers(1, &depthRenderbuffer);
         glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, currentScreenWidth, currentScreenHeight); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, currentScreenWidth, currentScreenHeight);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer);
     }
 
@@ -333,7 +333,7 @@ void InitGraphicsDevice(void)
         [EAGLContext setCurrentContext:nil]; [iosEaglContext release]; iosEaglContext = NULL; return;
     }
 
-    CORE.Window.ready = true; 
+    CORE.Window.ready = true;
     TRACELOG(LOG_INFO, "PLATFORM: IOS: Initialized graphics device (Screen: %ix%i)", currentScreenWidth, currentScreenHeight);
     glViewport(0, 0, currentScreenWidth, currentScreenHeight);
 }
@@ -384,7 +384,7 @@ void SwapScreenBuffer(void)
 //----------------------------------------------------------------------------------
 // Window-related functions
 //----------------------------------------------------------------------------------
-bool WindowShouldClose(void) { return CORE.Window.shouldClose; } 
+bool WindowShouldClose(void) { return CORE.Window.shouldClose; }
 void ToggleFullscreen(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: ToggleFullscreen() not applicable"); }
 void ToggleBorderlessWindowed(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: ToggleBorderlessWindowed() not applicable"); }
 void MaximizeWindow(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: MaximizeWindow() not applicable"); }
@@ -417,7 +417,7 @@ int GetCurrentMonitor(void) { return 0; }
 Vector2 GetMonitorPosition(int monitor) { return (Vector2){ 0.0f, 0.0f }; }
 int GetMonitorWidth(int monitor) { if (monitor == 0) return (int)[[UIScreen mainScreen] nativeBounds].size.width; return 0; }
 int GetMonitorHeight(int monitor) { if (monitor == 0) return (int)[[UIScreen mainScreen] nativeBounds].size.height; return 0; }
-int GetMonitorPhysicalWidth(int monitor) { return 0; } 
+int GetMonitorPhysicalWidth(int monitor) { return 0; }
 int GetMonitorPhysicalHeight(int monitor) { return 0; }
 int GetMonitorRefreshRate(int monitor) { return 60; } // Typical iOS display refresh rate
 const char *GetMonitorName(int monitor) { if (monitor == 0) return "Primary Display"; return ""; }
@@ -429,7 +429,7 @@ void SetClipboardText(const char *text)
 
 const char *GetClipboardText(void)
 {
-    static char clipboardText[1024]; 
+    static char clipboardText[1024];
     NSString *pasteboardString = [[UIPasteboard generalPasteboard] string];
     if (pasteboardString)
     {
@@ -442,7 +442,7 @@ const char *GetClipboardText(void)
 
 void ShowCursor(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: ShowCursor() not applicable"); }
 void HideCursor(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: HideCursor() not applicable"); }
-bool IsCursorHidden(void) { return true; } 
+bool IsCursorHidden(void) { return true; }
 void EnableCursor(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: EnableCursor() not applicable"); }
 void DisableCursor(void) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: DisableCursor() not applicable"); }
 bool IsCursorOnScreen(void) { return true; }
@@ -486,7 +486,7 @@ Vector2 GetMouseDelta(void) { return (Vector2){ CORE.Input.Mouse.currentPosition
 void SetMousePosition(int x, int y) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: SetMousePosition() not applicable"); }
 void SetMouseOffset(int offsetX, int offsetY) { CORE.Input.Mouse.offset = (Vector2){ (float)offsetX, (float)offsetY }; }
 void SetMouseScale(float scaleX, float scaleY) { CORE.Input.Mouse.scale = (Vector2){ scaleX, scaleY }; }
-float GetMouseWheelMove(void) { return CORE.Input.Mouse.currentWheelMove.y; } 
+float GetMouseWheelMove(void) { return CORE.Input.Mouse.currentWheelMove.y; }
 Vector2 GetMouseWheelMoveV(void) { return CORE.Input.Mouse.currentWheelMove; }
 void SetMouseCursor(int cursor) { TRACELOG(LOG_WARNING, "PLATFORM: IOS: SetMouseCursor() not applicable"); }
 
@@ -526,7 +526,7 @@ void PollInputEvents(void)
     // Update previous mouse state from current state
     CORE.Input.Mouse.previousPosition = CORE.Input.Mouse.currentPosition;
     for (int i = 0; i < MAX_MOUSE_BUTTONS; i++) CORE.Input.Mouse.previousButtonState[i] = CORE.Input.Mouse.currentButtonState[i];
-    CORE.Input.Mouse.previousWheelMove = CORE.Input.Mouse.currentWheelMove; 
+    CORE.Input.Mouse.previousWheelMove = CORE.Input.Mouse.currentWheelMove;
     CORE.Input.Mouse.currentWheelMove = (Vector2){ 0.0f, 0.0f }; // Reset wheel move for current frame
 
     // Update previous touch state from current state
